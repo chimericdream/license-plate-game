@@ -41,8 +41,9 @@ export function NewTripForm() {
               size="md"
             />
             <Text size="sm" c="dimmed">
-              When you start, your browser will ask for location access. Coordinates are saved only
-              on this device.
+              When you start, your browser will ask for location access. Coordinates are saved on
+              this device. Only the map view (which loads OpenStreetMap tiles) and the optional town
+              lookup in Trips contact an outside service.
             </Text>
             <Button type="submit" size="lg">
               Start trip

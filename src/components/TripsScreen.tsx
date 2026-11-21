@@ -8,6 +8,7 @@ import { appStore } from '../state/instances';
 import { selectTripSightings, selectTrips } from '../state/selectors';
 import { DataBackupCard } from './DataBackupCard';
 import { NewTripModal } from './NewTripModal';
+import { PreferencesCard } from './PreferencesCard';
 import screen from './Screen.module.css';
 import classes from './TripsScreen.module.css';
 
@@ -55,6 +56,7 @@ export function TripsScreen({ onOpenPlates }: { onOpenPlates: () => void }) {
               onOpenPlates={onOpenPlates}
             />
           ))}
+          <PreferencesCard />
           <DataBackupCard />
         </div>
       </main>

@@ -160,6 +160,11 @@ function MapView({ sightings, selected, onSelect, onEdit }: MapViewProps) {
               <Text size="sm" c="dimmed">
                 {formatDay(when.date)}, {formatTime(when.time)}
               </Text>
+              {selected.place ? (
+                <Text size="sm" c="dimmed">
+                  Near {selected.place}
+                </Text>
+              ) : null}
               {selected.note ? (
                 <Text size="sm" lineClamp={2}>
                   {selected.note}
@@ -199,7 +204,7 @@ function SightingRow({ sighting, onOpen }: { sighting: Sighting; onOpen: () => v
         </Group>
         <Text size="xs" c={location ? 'dimmed' : 'yellow'}>
           {location
-            ? `${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`
+            ? (sighting.place ?? `${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`)
             : 'No location recorded'}
         </Text>
         {sighting.note ? (

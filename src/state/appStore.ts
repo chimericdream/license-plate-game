@@ -156,7 +156,7 @@ export class AppStore {
   /** Edits the user-editable fields of a sighting. */
   updateSighting(
     id: string,
-    patch: Partial<Pick<Sighting, 'regionId' | 'seenAt' | 'note' | 'location'>>,
+    patch: Partial<Pick<Sighting, 'regionId' | 'seenAt' | 'note' | 'location' | 'place'>>,
   ): void {
     const nowIso = isoWithOffset(this.deps.now());
     this.commit({
@@ -206,6 +206,19 @@ export class AppStore {
       ...this.state.data,
       sightings: this.state.data.sightings.map((s) =>
         s.id === id && !s.deletedAt ? { ...s, deletedAt: nowIso, updatedAt: nowIso } : s,
+      ),
+    });
+  }
+
+  /** Records the looked-up town for a sighting (null = looked up, nothing found). */
+  setPlace(id: string, place: string | null): void {
+    const target = this.state.data.sightings.find((s) => s.id === id);
+    if (!target || target.deletedAt) return;
+    const nowIso = isoWithOffset(this.deps.now());
+    this.commit({
+      ...this.state.data,
+      sightings: this.state.data.sightings.map((s) =>
+        s.id === id ? { ...s, place, updatedAt: nowIso } : s,
       ),
     });
   }

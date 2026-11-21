@@ -74,6 +74,7 @@ function isSighting(value: unknown): value is Sighting {
     isText(value.regionId) &&
     isTime(value.seenAt) &&
     isText(value.note) &&
+    (value.place === undefined || value.place === null || isText(value.place)) &&
     (value.location === null || isGeoFix(value.location))
   );
 }

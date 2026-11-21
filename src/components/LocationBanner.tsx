@@ -29,7 +29,8 @@ export function LocationBanner() {
     return (
       <Alert color="blue" title="Turn on location">
         <Text size="sm" mb="xs">
-          Plate Trip records where you spot each plate. Your location stays on this device.
+          Plate Trip records where you spot each plate and keeps it on this device. Nothing is sent
+          anywhere unless you open the map or turn on town lookups.
         </Text>
         <Button size="xs" onClick={() => locationService.enable()}>
           Enable location

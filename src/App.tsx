@@ -9,7 +9,7 @@ import { StatsScreen } from './components/StatsScreen';
 import { TimelineScreen } from './components/TimelineScreen';
 import { TripsScreen } from './components/TripsScreen';
 import { useAppState } from './state/hooks';
-import { appStore, locationService } from './state/instances';
+import { appStore, locationService, placeResolver } from './state/instances';
 import { selectActiveTrip, selectTrips } from './state/selectors';
 import { requestPersistentStorage } from './storage/persistence';
 
@@ -23,6 +23,8 @@ export function App() {
     void appStore.init();
     void locationService.init();
     void requestPersistentStorage();
+    // Fills in town names in the background, but only if the user turned that on.
+    return placeResolver.start();
   }, []);
 
   // Once a trip exists, ask for location on our own at launch and on every

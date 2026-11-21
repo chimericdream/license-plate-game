@@ -90,12 +90,16 @@ function EditorForm({ sighting, readOnly, onClose }: Props & { sighting: Sightin
         : { lat: latValue, lng: lngValue, accuracy: null, capturedAt: isoWithOffset(new Date()) };
     }
 
+    // A different position makes the old town name wrong; clearing it lets the
+    // lookup (if enabled) label the new spot.
+    const locationChanged = original?.lat !== location?.lat || original?.lng !== location?.lng;
     const timeUnchanged = when === toLocalInputValue(sighting.seenAt);
     appStore.updateSighting(sighting.id, {
       regionId,
       seenAt: timeUnchanged ? sighting.seenAt : withWallClock(sighting.seenAt, when),
       note: note.trim(),
       location,
+      ...(locationChanged ? { place: undefined } : {}),
     });
     onClose();
   };
@@ -151,6 +155,11 @@ function EditorForm({ sighting, readOnly, onClose }: Props & { sighting: Sightin
         {!coordinatesBlank && (latValue === null || lngValue === null) ? (
           <Text size="xs" c="red">
             Enter both latitude and longitude, or clear both.
+          </Text>
+        ) : null}
+        {sighting.place ? (
+          <Text size="xs" c="dimmed">
+            Near {sighting.place}
           </Text>
         ) : null}
         {sighting.location?.accuracy != null ? (

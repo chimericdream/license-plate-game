@@ -27,6 +27,11 @@ export interface Sighting extends Syncable {
   seenAt: string;
   location: GeoFix | null;
   note: string;
+  /**
+   * Town name looked up from the coordinates (e.g. "Grand Junction, Colorado").
+   * undefined = not looked up yet, null = looked up but nothing was found.
+   */
+  place?: string | null;
 }
 
 export interface StoreData {
