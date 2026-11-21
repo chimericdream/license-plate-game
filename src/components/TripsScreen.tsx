@@ -1,11 +1,24 @@
-import { Badge, Button, Card, Group, Modal, Stack, Text, TextInput, Title } from '@mantine/core';
-import { IconChevronRight } from '@tabler/icons-react';
+import {
+  Badge,
+  Button,
+  Card,
+  Group,
+  Menu,
+  Modal,
+  Stack,
+  Text,
+  TextInput,
+  Title,
+} from '@mantine/core';
+import { IconChevronDown, IconChevronRight } from '@tabler/icons-react';
 import { useMemo, useState, type FormEvent } from 'react';
+import { exportTrip } from '../actions/exportTrip';
 import { formatDate, wallClock } from '../domain/time';
 import type { Trip } from '../domain/types';
 import { useAppState } from '../state/hooks';
 import { appStore } from '../state/instances';
 import { selectTripSightings, selectTrips } from '../state/selectors';
+import { countLocated } from '../storage/exportTrip';
 import { DataBackupCard } from './DataBackupCard';
 import { NewTripModal } from './NewTripModal';
 import { PreferencesCard } from './PreferencesCard';
@@ -19,12 +32,13 @@ export function TripsScreen({ onOpenPlates }: { onOpenPlates: () => void }) {
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const stats = useMemo(() => {
-    const result = new Map<string, { plates: number; regions: number }>();
+    const result = new Map<string, { plates: number; regions: number; located: number }>();
     for (const trip of data.trips) {
       const sightings = selectTripSightings(data, trip.id);
       result.set(trip.id, {
         plates: sightings.length,
         regions: new Set(sightings.map((s) => s.regionId)).size,
+        located: countLocated(sightings),
       });
     }
     return result;
@@ -52,6 +66,7 @@ export function TripsScreen({ onOpenPlates }: { onOpenPlates: () => void }) {
               active={trip.id === data.activeTripId}
               plates={stats.get(trip.id)?.plates ?? 0}
               regions={stats.get(trip.id)?.regions ?? 0}
+              located={stats.get(trip.id)?.located ?? 0}
               onEdit={() => setEditingId(trip.id)}
               onOpenPlates={onOpenPlates}
             />
@@ -72,11 +87,12 @@ interface CardProps {
   active: boolean;
   plates: number;
   regions: number;
+  located: number;
   onEdit: () => void;
   onOpenPlates: () => void;
 }
 
-function TripCard({ trip, active, plates, regions, onEdit, onOpenPlates }: CardProps) {
+function TripCard({ trip, active, plates, regions, located, onEdit, onOpenPlates }: CardProps) {
   const start = formatDate(wallClock(trip.startedAt).date);
   const end = trip.endedAt ? formatDate(wallClock(trip.endedAt).date) : null;
 
@@ -134,6 +150,25 @@ function TripCard({ trip, active, plates, regions, onEdit, onOpenPlates }: CardP
           <Button size="xs" variant="default" onClick={onEdit}>
             Rename or delete
           </Button>
+          <Menu position="bottom-start" withinPortal>
+            <Menu.Target>
+              <Button
+                size="xs"
+                variant="default"
+                rightSection={<IconChevronDown size={14} aria-hidden />}
+              >
+                Export
+              </Button>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Item disabled={plates === 0} onClick={() => exportTrip(trip, 'csv')}>
+                Spreadsheet (CSV)
+              </Menu.Item>
+              <Menu.Item disabled={located === 0} onClick={() => exportTrip(trip, 'gpx')}>
+                GPS track (GPX)
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
         </Group>
       </div>
     </Card>

@@ -28,9 +28,8 @@ export async function shareBackup(data: StoreData, now = new Date()): Promise<Ex
   }
 }
 
-/** Saves the backup straight to the device's downloads. */
-export function downloadBackup(data: StoreData, now = new Date()): ExportResult {
-  const file = makeFile(data, now);
+/** Saves a file straight to the device's downloads. */
+export function downloadFile(file: File): ExportResult {
   const url = URL.createObjectURL(file);
   const link = document.createElement('a');
   link.href = url;
@@ -41,4 +40,14 @@ export function downloadBackup(data: StoreData, now = new Date()): ExportResult 
   // Give the browser a moment to start the download before releasing the blob.
   setTimeout(() => URL.revokeObjectURL(url), 10_000);
   return 'downloaded';
+}
+
+/** Saves the backup straight to the device's downloads. */
+export function downloadBackup(data: StoreData, now = new Date()): ExportResult {
+  return downloadFile(makeFile(data, now));
+}
+
+/** Saves a text export (CSV, GPX) to the device's downloads. */
+export function downloadTextFile(filename: string, content: string, mimeType: string): void {
+  downloadFile(new File([content], filename, { type: mimeType }));
 }
