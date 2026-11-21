@@ -43,3 +43,10 @@
 [data-mantine-color-scheme='dark'] .pt-map .leaflet-tile-pane {
   filter: invert(1) hue-rotate(180deg) brightness(0.9) contrast(0.9);
 }
+
+/* The location picker fills a phone-sized dialog. */
+@media (max-width: 36em) {
+  .pt-map.pt-map--tall {
+    height: calc(100dvh - 240px);
+  }
+}

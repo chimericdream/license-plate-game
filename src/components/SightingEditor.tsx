@@ -11,10 +11,11 @@ import {
 } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
 import { useState } from 'react';
-import { COUNTRIES, regionsFor } from '../data/regions';
+import { COUNTRIES, getRegion, regionsFor } from '../data/regions';
 import { isoWithOffset, toLocalInputValue, withWallClock } from '../domain/time';
 import type { GeoFix, Sighting } from '../domain/types';
 import { appStore, locationService } from '../state/instances';
+import { LocationPickerModal } from './LocationPickerModal';
 import { PhotoSection } from './PhotoSection';
 
 const REGION_OPTIONS = COUNTRIES.map((country) => ({
@@ -59,6 +60,7 @@ function EditorForm({ sighting, readOnly, onClose }: Props & { sighting: Sightin
   const [lat, setLat] = useState(sighting.location ? String(sighting.location.lat) : '');
   const [lng, setLng] = useState(sighting.location ? String(sighting.location.lng) : '');
   const [locating, setLocating] = useState(false);
+  const [picking, setPicking] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const latValue = parseCoordinate(lat, 90);
@@ -78,6 +80,11 @@ function EditorForm({ sighting, readOnly, onClose }: Props & { sighting: Sightin
       setLng(String(fix.lng));
     }
   };
+
+  const pickedStart =
+    latValue !== null && lngValue !== null && !Number.isNaN(latValue) && !Number.isNaN(lngValue)
+      ? { lat: latValue, lng: lngValue }
+      : null;
 
   const save = () => {
     if (!canSave || regionId === null) return;
@@ -174,6 +181,11 @@ function EditorForm({ sighting, readOnly, onClose }: Props & { sighting: Sightin
               Use my current location
             </Button>
           )}
+          {readOnly ? null : (
+            <Button size="xs" variant="light" onClick={() => setPicking(true)}>
+              Pick on map
+            </Button>
+          )}
           {mapUrl ? (
             <Anchor href={mapUrl} target="_blank" rel="noreferrer" size="sm">
               Open in maps
@@ -181,6 +193,18 @@ function EditorForm({ sighting, readOnly, onClose }: Props & { sighting: Sightin
           ) : null}
         </Group>
       </Stack>
+
+      <LocationPickerModal
+        opened={picking}
+        initial={pickedStart}
+        code={getRegion(regionId ?? sighting.regionId)?.code ?? '?'}
+        onClose={() => setPicking(false)}
+        onConfirm={(point) => {
+          setLat(point.lat.toFixed(6));
+          setLng(point.lng.toFixed(6));
+          setPicking(false);
+        }}
+      />
 
       <Textarea
         label="Note"

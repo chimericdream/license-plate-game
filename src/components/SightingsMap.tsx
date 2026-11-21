@@ -1,9 +1,8 @@
 import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
 import { useEffect, useMemo, useRef } from 'react';
 import { getRegion } from '../data/regions';
 import type { Sighting } from '../domain/types';
-import './SightingsMap.css';
+import { createBaseMap, pinIcon } from './mapShared';
 
 interface Props {
   sightings: readonly Sighting[];
@@ -11,21 +10,7 @@ interface Props {
   onSelect: (id: string) => void;
 }
 
-const TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
-const ATTRIBUTION =
-  '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap</a> contributors';
-
 type Located = Sighting & { location: NonNullable<Sighting['location']> };
-
-function pinIcon(code: string, selected: boolean): L.DivIcon {
-  // `code` comes from our own region table, never from user input.
-  return L.divIcon({
-    className: 'pt-icon',
-    html: `<span class="pt-pin"${selected ? ' data-selected' : ''}>${code}</span>`,
-    iconSize: [36, 24],
-    iconAnchor: [18, 12],
-  });
-}
 
 /** Pins for every located sighting, joined in time order to sketch the route. */
 export default function SightingsMap({ sightings, selectedId, onSelect }: Props) {
@@ -56,24 +41,12 @@ export default function SightingsMap({ sightings, selectedId, onSelect }: Props)
     const container = containerRef.current;
     if (!container) return;
 
-    const map = L.map(container, { worldCopyJump: true });
-    L.tileLayer(TILE_URL, {
-      maxZoom: 19,
-      attribution: ATTRIBUTION,
-      // CORS requests give cacheable (non-opaque) responses for offline reuse.
-      crossOrigin: true,
-    }).addTo(map);
-    map.setView([39.5, -98.35], 4); // the middle of the US until we have pins
+    const { map, dispose } = createBaseMap(container);
     layerRef.current = L.layerGroup().addTo(map);
     mapRef.current = map;
 
-    // Folding or rotating the phone resizes the container.
-    const observer = new ResizeObserver(() => map.invalidateSize());
-    observer.observe(container);
-
     return () => {
-      observer.disconnect();
-      map.remove();
+      dispose();
       mapRef.current = null;
       layerRef.current = null;
     };
