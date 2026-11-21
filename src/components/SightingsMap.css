@@ -47,6 +47,6 @@
 /* The location picker fills a phone-sized dialog. */
 @media (max-width: 36em) {
   .pt-map.pt-map--tall {
-    height: calc(100dvh - 240px);
+    height: calc(100dvh - 340px);
   }
 }
