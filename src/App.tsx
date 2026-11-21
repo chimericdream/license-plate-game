@@ -55,7 +55,7 @@ export function App() {
           )
         ) : null}
         {tab === 'timeline' ? <TimelineScreen /> : null}
-        {tab === 'trips' ? <TripsScreen /> : null}
+        {tab === 'trips' ? <TripsScreen onOpenPlates={() => setTab('plates')} /> : null}
       </div>
       <BottomNav tab={tab} onChange={setTab} />
     </>

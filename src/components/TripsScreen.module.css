@@ -1,0 +1,24 @@
+.summary {
+  display: block;
+  width: 100%;
+  padding: var(--mantine-spacing-md);
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+}
+
+button.summary {
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+button.summary:active {
+  background: light-dark(var(--mantine-color-gray-1), var(--mantine-color-dark-5));
+}
+
+.actions {
+  padding: 0 var(--mantine-spacing-md) var(--mantine-spacing-md);
+}

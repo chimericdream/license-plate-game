@@ -1,4 +1,5 @@
 import { Badge, Button, Card, Group, Modal, Stack, Text, TextInput, Title } from '@mantine/core';
+import { IconChevronRight } from '@tabler/icons-react';
 import { useMemo, useState, type FormEvent } from 'react';
 import { formatDate, wallClock } from '../domain/time';
 import type { Trip } from '../domain/types';
@@ -8,8 +9,9 @@ import { selectTripSightings, selectTrips } from '../state/selectors';
 import { DataBackupCard } from './DataBackupCard';
 import { NewTripModal } from './NewTripModal';
 import screen from './Screen.module.css';
+import classes from './TripsScreen.module.css';
 
-export function TripsScreen() {
+export function TripsScreen({ onOpenPlates }: { onOpenPlates: () => void }) {
   const { data } = useAppState();
   const trips = selectTrips(data);
   const [creating, setCreating] = useState(false);
@@ -50,6 +52,7 @@ export function TripsScreen() {
               plates={stats.get(trip.id)?.plates ?? 0}
               regions={stats.get(trip.id)?.regions ?? 0}
               onEdit={() => setEditingId(trip.id)}
+              onOpenPlates={onOpenPlates}
             />
           ))}
           <DataBackupCard />
@@ -68,32 +71,54 @@ interface CardProps {
   plates: number;
   regions: number;
   onEdit: () => void;
+  onOpenPlates: () => void;
 }
 
-function TripCard({ trip, active, plates, regions, onEdit }: CardProps) {
+function TripCard({ trip, active, plates, regions, onEdit, onOpenPlates }: CardProps) {
   const start = formatDate(wallClock(trip.startedAt).date);
   const end = trip.endedAt ? formatDate(wallClock(trip.endedAt).date) : null;
 
-  return (
-    <Card withBorder padding="md" radius="md">
-      <Stack gap="xs">
-        <Group justify="space-between" wrap="nowrap" align="flex-start">
-          <div style={{ minWidth: 0 }}>
-            <Text fw={700} truncate>
-              {trip.name}
-            </Text>
-            <Text size="sm" c="dimmed">
-              {end && end !== start ? `${start} to ${end}` : start}
-            </Text>
-          </div>
-          <Badge color={active ? 'green' : 'gray'} variant="light" style={{ flexShrink: 0 }}>
+  const summary = (
+    <Stack gap="xs">
+      <Group justify="space-between" wrap="nowrap" align="flex-start">
+        <div style={{ minWidth: 0 }}>
+          <Text fw={700} truncate>
+            {trip.name}
+          </Text>
+          <Text size="sm" c="dimmed">
+            {end && end !== start ? `${start} to ${end}` : start}
+          </Text>
+        </div>
+        <Group gap={4} wrap="nowrap" style={{ flexShrink: 0 }}>
+          <Badge color={active ? 'green' : 'gray'} variant="light">
             {active ? 'Active' : 'Ended'}
           </Badge>
+          {active ? <IconChevronRight size={18} aria-hidden /> : null}
         </Group>
-        <Text size="sm">
-          {plates} {plates === 1 ? 'plate' : 'plates'} · {regions}{' '}
-          {regions === 1 ? 'state/province' : 'states/provinces'}
-        </Text>
+      </Group>
+      <Text size="sm">
+        {plates} {plates === 1 ? 'plate' : 'plates'} · {regions}{' '}
+        {regions === 1 ? 'state/province' : 'states/provinces'}
+      </Text>
+    </Stack>
+  );
+
+  return (
+    <Card withBorder padding={0} radius="md">
+      {/* Tapping the active trip jumps back to the plates grid. */}
+      {active ? (
+        <button
+          type="button"
+          className={classes.summary}
+          aria-label={`${trip.name}, active. Open plates`}
+          onClick={onOpenPlates}
+        >
+          {summary}
+        </button>
+      ) : (
+        <div className={classes.summary}>{summary}</div>
+      )}
+      <div className={classes.actions}>
         <Group gap="xs">
           {active ? (
             <Button size="xs" variant="light" onClick={() => appStore.endTrip(trip.id)}>
@@ -108,7 +133,7 @@ function TripCard({ trip, active, plates, regions, onEdit }: CardProps) {
             Rename or delete
           </Button>
         </Group>
-      </Stack>
+      </div>
     </Card>
   );
 }
