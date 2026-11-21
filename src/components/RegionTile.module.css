@@ -1,0 +1,63 @@
+.tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 72px;
+  padding: var(--mantine-spacing-xs);
+  border-radius: var(--mantine-radius-md);
+  border: 1px solid light-dark(var(--mantine-color-gray-4), var(--mantine-color-dark-4));
+  background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-6));
+  color: inherit;
+  text-align: center;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition:
+    transform 80ms ease,
+    background-color 120ms ease;
+}
+
+.tile:active {
+  transform: scale(0.95);
+}
+
+.tile[data-found] {
+  background: var(--mantine-color-blue-filled);
+  border-color: var(--mantine-color-blue-filled);
+  color: var(--mantine-color-white);
+}
+
+.code {
+  font-size: var(--mantine-font-size-xl);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: 0.02em;
+}
+
+.name {
+  max-width: 100%;
+  font-size: var(--mantine-font-size-xs);
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  opacity: 0.8;
+}
+
+.count {
+  position: absolute;
+  top: 4px;
+  right: 6px;
+  min-width: 20px;
+  padding-inline: 5px;
+  border-radius: 10px;
+  background: var(--mantine-color-white);
+  color: var(--mantine-color-blue-filled);
+  font-size: var(--mantine-font-size-xs);
+  font-weight: 700;
+  line-height: 20px;
+  text-align: center;
+}
