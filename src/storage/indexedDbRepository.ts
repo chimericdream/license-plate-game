@@ -1,21 +1,32 @@
 import type { Sighting, StoreData, Trip } from '../domain/types';
 import { sharedDb, type PlateDb, type StoredMeta } from './db';
-import { STORAGE_KEY } from './localStorageRepository';
 import { emptyStoreData, migrate } from './migrate';
 import type { Repository } from './repository';
 
-/** Where the pre-IndexedDB copy of the data is kept after it has been moved. */
-export const LEGACY_BACKUP_KEY = `${STORAGE_KEY}:before-indexeddb`;
+/** Keys the app used before it moved to IndexedDB; anything under them is leftover test data. */
+const LEGACY_PREFIX = 'plate-trip:data';
 
-type LegacyStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
+type LegacyStorage = Pick<Storage, 'removeItem' | 'key' | 'length'>;
+
+function removeLegacyData(storage: LegacyStorage): void {
+  try {
+    const keys: string[] = [];
+    for (let i = 0; i < storage.length; i += 1) {
+      const key = storage.key(i);
+      if (key?.startsWith(LEGACY_PREFIX)) keys.push(key);
+    }
+    for (const key of keys) storage.removeItem(key);
+  } catch {
+    // Not worth failing a launch over.
+  }
+}
 
 const byCreation = <T extends { createdAt: string; id: string }>(a: T, b: T) =>
   Date.parse(a.createdAt) - Date.parse(b.createdAt) || a.id.localeCompare(b.id);
 
 /**
  * Trips and sightings in IndexedDB, one record each, so a save only writes
- * what changed. On first run it moves any data from the old localStorage
- * repository across, keeping a copy of the original.
+ * what changed.
  */
 export class IndexedDbRepository implements Repository {
   private written = {
@@ -33,6 +44,7 @@ export class IndexedDbRepository implements Repository {
   ) {}
 
   async load(): Promise<StoreData> {
+    if (this.legacy) removeLegacyData(this.legacy);
     const db = await this.getDb();
     const tx = db.transaction(['meta', 'trips', 'sightings'], 'readonly');
     const [meta, trips, sightings] = await Promise.all([
@@ -42,7 +54,10 @@ export class IndexedDbRepository implements Repository {
     ]);
     await tx.done;
 
-    if (!meta) return this.importLegacy();
+    if (!meta) {
+      this.remember(emptyStoreData());
+      return emptyStoreData();
+    }
 
     const data = migrate({
       schemaVersion: meta.schemaVersion,
@@ -102,40 +117,5 @@ export class IndexedDbRepository implements Repository {
         activeTripId: data.activeTripId,
       } satisfies StoredMeta),
     };
-  }
-
-  /**
-   * Nothing is in IndexedDB yet. If the old localStorage repository has data,
-   * copy it over (in one transaction), then park the original under another
-   * key so it is never re-imported but is not thrown away either.
-   */
-  private async importLegacy(): Promise<StoreData> {
-    const raw = this.legacy?.getItem(STORAGE_KEY) ?? null;
-    if (raw === null || this.legacy === null) return emptyStoreData();
-
-    let data: StoreData;
-    try {
-      data = migrate(JSON.parse(raw));
-    } catch (error) {
-      // Same policy as before: never destroy data we can't read.
-      const backupKey = `${STORAGE_KEY}:unreadable:${Date.now()}`;
-      try {
-        this.legacy.setItem(backupKey, raw);
-        this.legacy.removeItem(STORAGE_KEY);
-      } catch {
-        // Out of space; leave the original where it is.
-      }
-      console.warn(`Could not read stored data; backed up to ${backupKey}`, error);
-      return emptyStoreData();
-    }
-
-    await this.write(data);
-    try {
-      this.legacy.setItem(LEGACY_BACKUP_KEY, raw);
-      this.legacy.removeItem(STORAGE_KEY);
-    } catch {
-      // Leave the original in place; it is ignored from now on because IndexedDB has the data.
-    }
-    return data;
   }
 }

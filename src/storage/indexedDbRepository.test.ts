@@ -2,21 +2,23 @@ import 'fake-indexeddb/auto';
 import { describe, expect, it } from 'vitest';
 import type { Photo, Sighting, StoreData, Trip } from '../domain/types';
 import { openPlateDb } from './db';
-import { IndexedDbRepository, LEGACY_BACKUP_KEY } from './indexedDbRepository';
-import { STORAGE_KEY } from './localStorageRepository';
+import { IndexedDbRepository } from './indexedDbRepository';
 import { emptyStoreData } from './migrate';
 import { IndexedDbPhotoRepository } from './photoRepository';
 
 class FakeStorage {
   items = new Map<string, string>();
-  getItem(key: string) {
-    return this.items.get(key) ?? null;
-  }
   setItem(key: string, value: string) {
     this.items.set(key, value);
   }
   removeItem(key: string) {
     this.items.delete(key);
+  }
+  key(index: number) {
+    return [...this.items.keys()][index] ?? null;
+  }
+  get length() {
+    return this.items.size;
   }
 }
 
@@ -150,43 +152,16 @@ describe('IndexedDbRepository', () => {
   });
 });
 
-describe('moving from localStorage', () => {
-  const legacyData = store({
-    activeTripId: 't1',
-    trips: [trip('t1')],
-    sightings: [sighting('s1'), sighting('s2', '2026-11-21T11:00:00.000-07:00')],
-  });
-
-  it('imports the old data once and keeps the original as a backup', async () => {
+describe('leftover localStorage data', () => {
+  it('is cleared on launch, without touching other settings', async () => {
     const { repo, legacy } = setup();
-    const raw = JSON.stringify(legacyData);
-    legacy.setItem(STORAGE_KEY, raw);
+    legacy.setItem('plate-trip:data', '{}');
+    legacy.setItem('plate-trip:data:before-indexeddb', '{}');
+    legacy.setItem('plate-trip:data:unreadable:1', 'x');
+    legacy.setItem('plate-trip:settings', '{"lookUpPlaces":true}');
 
-    expect(await repo().load()).toEqual(legacyData);
-    expect(legacy.getItem(STORAGE_KEY)).toBeNull();
-    expect(legacy.getItem(LEGACY_BACKUP_KEY)).toBe(raw);
-
-    // A later launch reads IndexedDB and does not look at the old key again.
-    legacy.setItem(STORAGE_KEY, JSON.stringify(emptyStoreData()));
-    expect(await repo().load()).toEqual(legacyData);
-  });
-
-  it('does not touch the old data if the import cannot be written', async () => {
-    const legacy = new FakeStorage();
-    legacy.setItem(STORAGE_KEY, JSON.stringify(legacyData));
-    const broken = new IndexedDbRepository(() => Promise.reject(new Error('no db')), legacy);
-    await expect(broken.load()).rejects.toThrow('no db');
-    expect(legacy.getItem(STORAGE_KEY)).not.toBeNull();
-    expect(legacy.getItem(LEGACY_BACKUP_KEY)).toBeNull();
-  });
-
-  it('parks unreadable old data instead of discarding it', async () => {
-    const { repo, legacy } = setup();
-    legacy.setItem(STORAGE_KEY, '{not json');
     expect(await repo().load()).toEqual(emptyStoreData());
-    const parked = [...legacy.items.entries()].filter(([key]) => key.includes(':unreadable:'));
-    expect(parked).toHaveLength(1);
-    expect(parked[0]?.[1]).toBe('{not json');
+    expect([...legacy.items.keys()]).toEqual(['plate-trip:settings']);
   });
 });
 
