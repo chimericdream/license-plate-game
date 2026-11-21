@@ -34,6 +34,17 @@ export interface Sighting extends Syncable {
   place?: string | null;
 }
 
+/** Metadata for a photo; the image data itself lives in a separate store. */
+export interface Photo extends Syncable {
+  sightingId: string;
+  tripId: string;
+  /** Pixel size of the stored full-size image. */
+  width: number;
+  height: number;
+  /** Size in bytes of the stored full-size JPEG. */
+  bytes: number;
+}
+
 export interface StoreData {
   schemaVersion: number;
   activeTripId: string | null;

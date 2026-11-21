@@ -1,11 +1,11 @@
 import { LocationService } from '../location/locationService';
 import { PlaceResolver } from '../location/placeResolver';
 import { reverseGeocode } from '../location/reverseGeocode';
-import { LocalStorageRepository } from '../storage/localStorageRepository';
+import { IndexedDbRepository } from '../storage/indexedDbRepository';
 import { AppStore } from './appStore';
 import { SettingsStore } from './settings';
 
-export const appStore = new AppStore(new LocalStorageRepository());
+export const appStore = new AppStore(new IndexedDbRepository());
 export const locationService = new LocationService();
 export const settings = new SettingsStore(localStorage);
 
