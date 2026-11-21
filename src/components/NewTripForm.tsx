@@ -12,7 +12,7 @@ import {
 import { useState, type FormEvent } from 'react';
 import { defaultTripName, startTrip } from '../actions/startTrip';
 import { ImportModal } from './ImportModal';
-import { useBackupImport } from './useBackupImport';
+import { BACKUP_FILE_TYPES, useBackupImport } from './useBackupImport';
 
 /** Full-screen first-run form, shown when no trip has ever been created. */
 export function NewTripForm() {
@@ -53,7 +53,7 @@ export function NewTripForm() {
 
         <Divider label="or" labelPosition="center" />
 
-        <FileButton onChange={backupImport.choose} accept="application/json,.json">
+        <FileButton onChange={backupImport.choose} accept={BACKUP_FILE_TYPES}>
           {(props) => (
             <Button variant="default" {...props}>
               Restore from a backup

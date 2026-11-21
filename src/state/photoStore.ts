@@ -1,6 +1,7 @@
 import { isoWithOffset } from '../domain/time';
 import type { Photo, StoreData } from '../domain/types';
 import { processImage, type ImageProcessor } from '../photos/processImage';
+import type { BackupPhoto } from '../storage/backupZip';
 import type { PhotoBlobs, PhotoRepository } from '../storage/photoRepository';
 import type { AppState } from './appStore';
 
@@ -33,12 +34,6 @@ export interface AddResult {
   added: number;
   /** One readable message per file that could not be added. */
   failures: string[];
-}
-
-export interface ImportItem {
-  photo: Photo;
-  /** Loaded only when the photo is actually kept. */
-  blobs: () => Promise<PhotoBlobs>;
 }
 
 type Listener = () => void;
@@ -147,7 +142,7 @@ export class PhotoStore {
    * the backup's photos the only ones. Photos whose plate is not live are skipped.
    */
   importPhotos(
-    items: readonly ImportItem[],
+    items: readonly BackupPhoto[],
     mode: 'merge' | 'replace',
     liveIds: ReadonlySet<string>,
   ): Promise<{ added: number }> {

@@ -3,7 +3,7 @@ import type { StoreData } from '../domain/types';
 
 export type ExportResult = 'shared' | 'downloaded' | 'cancelled';
 
-function makeFile(data: StoreData, now: Date): File {
+export function backupFile(data: StoreData, now: Date): File {
   return new File([createBackup(data, now)], backupFilename(now), { type: 'application/json' });
 }
 
@@ -12,15 +12,15 @@ export function canShareBackup(): boolean {
   if (typeof navigator === 'undefined' || !navigator.canShare || !navigator.share) return false;
   return navigator.canShare({
     files: [
-      makeFile({ schemaVersion: 1, activeTripId: null, trips: [], sightings: [] }, new Date()),
+      backupFile({ schemaVersion: 1, activeTripId: null, trips: [], sightings: [] }, new Date()),
     ],
   });
 }
 
-/** Opens the share sheet (Drive, Files, email, ...) with the backup attached. */
-export async function shareBackup(data: StoreData, now = new Date()): Promise<ExportResult> {
+/** Opens the share sheet (Drive, Files, email, ...) with the file attached. */
+export async function shareFile(file: File): Promise<ExportResult> {
   try {
-    await navigator.share({ files: [makeFile(data, now)], title: 'Plate Trip backup' });
+    await navigator.share({ files: [file], title: 'Plate Trip backup' });
     return 'shared';
   } catch (error) {
     if (error instanceof DOMException && error.name === 'AbortError') return 'cancelled';
@@ -38,13 +38,8 @@ export function downloadFile(file: File): ExportResult {
   link.click();
   link.remove();
   // Give the browser a moment to start the download before releasing the blob.
-  setTimeout(() => URL.revokeObjectURL(url), 10_000);
+  setTimeout(() => URL.revokeObjectURL(url), 60_000);
   return 'downloaded';
-}
-
-/** Saves the backup straight to the device's downloads. */
-export function downloadBackup(data: StoreData, now = new Date()): ExportResult {
-  return downloadFile(makeFile(data, now));
 }
 
 /** Saves a text export (CSV, GPX) to the device's downloads. */

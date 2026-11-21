@@ -20,9 +20,9 @@ export function createBackup(data: StoreData, now: Date): string {
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
-/** `plate-trip-backup-2026-11-21.json`, using the local calendar date. */
-export function backupFilename(now: Date): string {
-  return `plate-trip-backup-${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}.json`;
+/** `plate-trip-backup-2026-11-21.json` (or .zip), using the local calendar date. */
+export function backupFilename(now: Date, extension: 'json' | 'zip' = 'json'): string {
+  return `plate-trip-backup-${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}.${extension}`;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
