@@ -1,0 +1,4 @@
+.content {
+  min-height: 100dvh;
+  padding-bottom: var(--bottom-nav-height);
+}

@@ -1,0 +1,8 @@
+:root {
+  --bottom-nav-height: calc(64px + env(safe-area-inset-bottom));
+}
+
+/* Keep toasts above the bottom navigation bar. */
+.mantine-Notifications-root[data-position='bottom-center'] {
+  bottom: calc(var(--bottom-nav-height) + var(--mantine-spacing-xs));
+}

@@ -1,0 +1,30 @@
+/* Layout shared by the Plates, Timeline and Trips screens. */
+
+.shell {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding-top: calc(env(safe-area-inset-top) + var(--mantine-spacing-xs));
+  padding-bottom: var(--mantine-spacing-xs);
+  background: var(--mantine-color-body);
+  border-bottom: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+}
+
+.inner {
+  width: 100%;
+  max-width: 1200px;
+  margin-inline: auto;
+  padding-inline: var(--mantine-spacing-md);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mantine-spacing-xs);
+  padding-block: var(--mantine-spacing-md) var(--mantine-spacing-xl);
+}

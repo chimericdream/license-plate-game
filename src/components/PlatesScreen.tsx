@@ -17,6 +17,7 @@ import { useAppState, useLocationState } from '../state/hooks';
 import { countByRegion, selectTripSightings } from '../state/selectors';
 import { gpsStatusLabel, LocationBanner } from './LocationBanner';
 import classes from './PlatesScreen.module.css';
+import screen from './Screen.module.css';
 import { RegionTile } from './RegionTile';
 
 export function PlatesScreen({ trip }: { trip: Trip }) {
@@ -48,9 +49,9 @@ export function PlatesScreen({ trip }: { trip: Trip }) {
   const gpsColor = location.permission === 'granted' && location.fix ? 'green' : 'gray';
 
   return (
-    <div className={classes.shell}>
-      <header className={classes.header}>
-        <Stack className={classes.inner} gap="xs">
+    <div className={screen.shell}>
+      <header className={screen.header}>
+        <Stack className={screen.inner} gap="xs">
           <Group justify="space-between" wrap="nowrap" gap="xs">
             <div style={{ minWidth: 0 }}>
               <Title order={4} lineClamp={1}>
@@ -83,7 +84,7 @@ export function PlatesScreen({ trip }: { trip: Trip }) {
         </Stack>
       </header>
 
-      <main className={classes.inner}>
+      <main className={screen.inner}>
         <Stack gap="sm" pt="sm">
           {error ? (
             <Alert color="red" title="Something went wrong">

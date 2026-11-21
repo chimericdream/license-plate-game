@@ -17,6 +17,58 @@ export function isoWithOffset(date: Date): string {
   );
 }
 
+/** The date and time as the traveler saw them, ignoring the UTC offset. */
+export function wallClock(iso: string): { date: string; time: string } {
+  return { date: iso.slice(0, 10), time: iso.slice(11, 16) };
+}
+
+/** `datetime-local` input value (`YYYY-MM-DDTHH:mm`) for a stored time. */
+export function toLocalInputValue(iso: string): string {
+  const { date, time } = wallClock(iso);
+  return `${date}T${time}`;
+}
+
+/**
+ * Applies an edited wall-clock value to a stored time, keeping the UTC offset
+ * of where the plate was seen (so editing in a different zone doesn't shift it).
+ */
+export function withWallClock(originalIso: string, localValue: string): string {
+  const offset = /(Z|[+-]\d\d:\d\d)$/.exec(originalIso)?.[1] ?? 'Z';
+  return `${localValue}:00.000${offset}`;
+}
+
+/** `YYYY-MM-DD` to a heading like "Saturday, Nov 21". */
+export function formatDay(date: string): string {
+  const [y = 1970, m = 1, d = 1] = date.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString(undefined, {
+    weekday: 'long',
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  });
+}
+
+/** `YYYY-MM-DD` to a short date like "Nov 21, 2026". */
+export function formatDate(date: string): string {
+  const [y = 1970, m = 1, d = 1] = date.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+}
+
+/** `HH:mm` to a locale time like "2:05 PM". */
+export function formatTime(time: string): string {
+  const [h = 0, m = 0] = time.split(':').map(Number);
+  return new Date(Date.UTC(1970, 0, 1, h, m)).toLocaleTimeString(undefined, {
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: 'UTC',
+  });
+}
+
 export function minutesBetween(earlierIso: string, later: Date): number {
   return (later.getTime() - Date.parse(earlierIso)) / 60_000;
 }

@@ -1,21 +1,14 @@
 import { Button, Container, Stack, Text, TextInput, Title } from '@mantine/core';
 import { useState, type FormEvent } from 'react';
-import { appStore, locationService } from '../state/instances';
+import { defaultTripName, startTrip } from '../actions/startTrip';
 
-function defaultTripName(): string {
-  const month = new Date().toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
-  return `Road trip, ${month}`;
-}
-
+/** Full-screen first-run form, shown when no trip has ever been created. */
 export function NewTripForm() {
   const [name, setName] = useState(defaultTripName);
 
   const start = (event: FormEvent) => {
     event.preventDefault();
-    // Asking here (a user gesture) means the browser's location prompt shows
-    // up now, not in the middle of spotting the first plate.
-    locationService.enable();
-    appStore.createTrip(name);
+    startTrip(name);
   };
 
   return (

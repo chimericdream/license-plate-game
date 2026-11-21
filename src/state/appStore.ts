@@ -82,6 +82,76 @@ export class AppStore {
     return trip;
   }
 
+  /** Ends a trip. If it was the active one, there is no active trip afterward. */
+  endTrip(id: string): void {
+    const nowIso = isoWithOffset(this.deps.now());
+    const { data } = this.state;
+    this.commit({
+      ...data,
+      activeTripId: data.activeTripId === id ? null : data.activeTripId,
+      trips: data.trips.map((t) =>
+        t.id === id && !t.endedAt ? { ...t, endedAt: nowIso, updatedAt: nowIso } : t,
+      ),
+    });
+  }
+
+  /** Makes an ended trip the active one again, ending whichever was active. */
+  reopenTrip(id: string): void {
+    const nowIso = isoWithOffset(this.deps.now());
+    const { data } = this.state;
+    this.commit({
+      ...data,
+      activeTripId: id,
+      trips: data.trips.map((t) => {
+        if (t.id === id) return { ...t, endedAt: null, updatedAt: nowIso };
+        if (t.id === data.activeTripId && !t.endedAt) {
+          return { ...t, endedAt: nowIso, updatedAt: nowIso };
+        }
+        return t;
+      }),
+    });
+  }
+
+  renameTrip(id: string, name: string): void {
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    const nowIso = isoWithOffset(this.deps.now());
+    this.commit({
+      ...this.state.data,
+      trips: this.state.data.trips.map((t) =>
+        t.id === id ? { ...t, name: trimmed, updatedAt: nowIso } : t,
+      ),
+    });
+  }
+
+  /** Soft-deletes a trip along with its sightings. */
+  deleteTrip(id: string): void {
+    const nowIso = isoWithOffset(this.deps.now());
+    const { data } = this.state;
+    const mark = <T extends { deletedAt: string | null; updatedAt: string }>(item: T): T =>
+      item.deletedAt ? item : { ...item, deletedAt: nowIso, updatedAt: nowIso };
+    this.commit({
+      ...data,
+      activeTripId: data.activeTripId === id ? null : data.activeTripId,
+      trips: data.trips.map((t) => (t.id === id ? mark(t) : t)),
+      sightings: data.sightings.map((s) => (s.tripId === id ? mark(s) : s)),
+    });
+  }
+
+  /** Edits the user-editable fields of a sighting. */
+  updateSighting(
+    id: string,
+    patch: Partial<Pick<Sighting, 'regionId' | 'seenAt' | 'note' | 'location'>>,
+  ): void {
+    const nowIso = isoWithOffset(this.deps.now());
+    this.commit({
+      ...this.state.data,
+      sightings: this.state.data.sightings.map((s) =>
+        s.id === id && !s.deletedAt ? { ...s, ...patch, updatedAt: nowIso } : s,
+      ),
+    });
+  }
+
   /**
    * Logs a plate for the active trip. `fix` should be a fresh position or
    * null. Unless `force` is set, a repeat inside the cooldown is refused.

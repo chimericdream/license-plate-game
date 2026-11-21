@@ -3,7 +3,7 @@ import type { GeoFix, StoreData } from '../domain/types';
 import { emptyStoreData } from '../storage/migrate';
 import type { Repository } from '../storage/repository';
 import { AppStore } from './appStore';
-import { countByRegion, selectActiveTrip, selectTripSightings } from './selectors';
+import { countByRegion, selectActiveTrip, selectTripSightings, selectTrips } from './selectors';
 
 class MemoryRepository implements Repository {
   saved: StoreData | null = null;
@@ -132,6 +132,75 @@ describe('AppStore', () => {
     store.attachLocation(result.sighting.id, fix(1, 2));
     store.attachLocation(result.sighting.id, fix(3, 4));
     expect(store.getSnapshot().data.sightings[0]?.location).toMatchObject({ lat: 1, lng: 2 });
+  });
+
+  it('ends the active trip, leaving none active, and reopens it later', async () => {
+    const { store, advance } = setup();
+    await store.init();
+    const trip = store.createTrip('Trip');
+    advance(30);
+    store.endTrip(trip.id);
+    let data = store.getSnapshot().data;
+    expect(data.activeTripId).toBeNull();
+    expect(data.trips[0]?.endedAt).not.toBeNull();
+    expect(store.logSighting({ regionId: 'US-CO', fix: null })).toMatchObject({
+      reason: 'no-active-trip',
+    });
+
+    store.reopenTrip(trip.id);
+    data = store.getSnapshot().data;
+    expect(data.activeTripId).toBe(trip.id);
+    expect(data.trips[0]?.endedAt).toBeNull();
+  });
+
+  it('reopening a trip ends the one that was active', async () => {
+    const { store, advance } = setup();
+    await store.init();
+    const first = store.createTrip('First');
+    advance(10);
+    const second = store.createTrip('Second');
+    advance(10);
+    store.reopenTrip(first.id);
+    const { trips, activeTripId } = store.getSnapshot().data;
+    expect(activeTripId).toBe(first.id);
+    expect(trips.find((t) => t.id === first.id)?.endedAt).toBeNull();
+    expect(trips.find((t) => t.id === second.id)?.endedAt).not.toBeNull();
+  });
+
+  it('renames a trip but ignores blank names', async () => {
+    const { store } = setup();
+    await store.init();
+    const trip = store.createTrip('Old');
+    store.renameTrip(trip.id, '  New name ');
+    store.renameTrip(trip.id, '   ');
+    expect(store.getSnapshot().data.trips[0]?.name).toBe('New name');
+  });
+
+  it('deletes a trip and its sightings, and clears it as active', async () => {
+    const { store } = setup();
+    await store.init();
+    const trip = store.createTrip('Trip');
+    store.logSighting({ regionId: 'US-CO', fix: null });
+    store.deleteTrip(trip.id);
+    const data = store.getSnapshot().data;
+    expect(data.activeTripId).toBeNull();
+    expect(selectActiveTrip(data)).toBeUndefined();
+    expect(data.trips[0]?.deletedAt).not.toBeNull();
+    expect(data.sightings[0]?.deletedAt).not.toBeNull();
+    expect(selectTrips(data)).toEqual([]);
+  });
+
+  it('edits a sighting', async () => {
+    const { store } = setup();
+    await store.init();
+    store.createTrip('Trip');
+    const result = store.logSighting({ regionId: 'US-CO', fix: null });
+    if (!result.ok) throw new Error('expected ok');
+    store.updateSighting(result.sighting.id, { regionId: 'US-UT', note: 'Red rocks' });
+    expect(store.getSnapshot().data.sightings[0]).toMatchObject({
+      regionId: 'US-UT',
+      note: 'Red rocks',
+    });
   });
 
   it('notifies subscribers on change', async () => {
