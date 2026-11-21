@@ -5,6 +5,7 @@ import { BottomNav, type Tab } from './components/BottomNav';
 import { NewTripForm } from './components/NewTripForm';
 import { NoActiveTrip } from './components/NoActiveTrip';
 import { PlatesScreen } from './components/PlatesScreen';
+import { StatsScreen } from './components/StatsScreen';
 import { TimelineScreen } from './components/TimelineScreen';
 import { TripsScreen } from './components/TripsScreen';
 import { useAppState } from './state/hooks';
@@ -15,6 +16,8 @@ import { requestPersistentStorage } from './storage/persistence';
 export function App() {
   const { status, data, error } = useAppState();
   const [tab, setTab] = useState<Tab>('plates');
+  // Which trip the Timeline and Stats tabs show; null follows the active trip.
+  const [viewTripId, setViewTripId] = useState<string | null>(null);
 
   useEffect(() => {
     void appStore.init();
@@ -61,7 +64,10 @@ export function App() {
             <NoActiveTrip />
           )
         ) : null}
-        {tab === 'timeline' ? <TimelineScreen /> : null}
+        {tab === 'timeline' ? (
+          <TimelineScreen pickedId={viewTripId} onPick={setViewTripId} />
+        ) : null}
+        {tab === 'stats' ? <StatsScreen pickedId={viewTripId} onPick={setViewTripId} /> : null}
         {tab === 'trips' ? <TripsScreen onOpenPlates={() => setTab('plates')} /> : null}
       </div>
       <BottomNav tab={tab} onChange={setTab} />

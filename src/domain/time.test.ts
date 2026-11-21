@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   formatDay,
+  formatDuration,
   formatTime,
   isoWithOffset,
   minutesBetween,
@@ -38,6 +39,17 @@ describe('wall-clock helpers', () => {
   it('formats days and times without shifting them', () => {
     expect(formatDay('2026-11-21')).toContain('21');
     expect(formatTime('14:05')).toMatch(/2:05/);
+  });
+});
+
+describe('formatDuration', () => {
+  it('picks readable units', () => {
+    expect(formatDuration(0.4)).toBe('under a minute');
+    expect(formatDuration(45)).toBe('45 min');
+    expect(formatDuration(95)).toBe('1 h 35 min');
+    expect(formatDuration(120)).toBe('2 h');
+    expect(formatDuration(3000)).toBe('2 d 2 h');
+    expect(formatDuration(2880)).toBe('2 d');
   });
 });
 

@@ -1,0 +1,32 @@
+.tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--mantine-spacing-xs);
+}
+
+.tile {
+  padding: var(--mantine-spacing-sm);
+  border: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+  border-radius: var(--mantine-radius-md);
+  background: light-dark(var(--mantine-color-white), var(--mantine-color-dark-6));
+}
+
+.value {
+  font-size: var(--mantine-font-size-xl);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.caption {
+  font-size: var(--mantine-font-size-xs);
+  color: var(--mantine-color-dimmed);
+}
+
+.section {
+  margin-top: var(--mantine-spacing-lg);
+}
+
+/* Charts get a comfortable max width so they don't stretch on a wide screen. */
+.chart {
+  max-width: 640px;
+}

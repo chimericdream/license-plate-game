@@ -1,13 +1,21 @@
-import { Group, Select, Stack, Text, Title } from '@mantine/core';
-import { useState } from 'react';
+import { Button, Group, Loader, Paper, SegmentedControl, Stack, Text, Title } from '@mantine/core';
+import { useLocalStorage } from '@mantine/hooks';
+import { Suspense, lazy, useState } from 'react';
 import { getRegion } from '../data/regions';
 import { formatDay, formatTime, wallClock } from '../domain/time';
 import type { Sighting } from '../domain/types';
 import { useAppState } from '../state/hooks';
-import { selectTripSightings, selectTrips } from '../state/selectors';
+import { selectTripSightings, selectViewedTrip } from '../state/selectors';
+import { useOnline } from '../state/useOnline';
 import { SightingEditor } from './SightingEditor';
 import screen from './Screen.module.css';
 import classes from './TimelineScreen.module.css';
+import { TripPicker } from './TripPicker';
+
+// Leaflet is only fetched when the Map view is opened.
+const SightingsMap = lazy(() => import('./SightingsMap'));
+
+type View = 'list' | 'map';
 
 function groupByDay(sightings: Sighting[]): { date: string; items: Sighting[] }[] {
   const groups = new Map<string, Sighting[]>();
@@ -20,16 +28,20 @@ function groupByDay(sightings: Sighting[]): { date: string; items: Sighting[] }[
   return [...groups].map(([date, items]) => ({ date, items }));
 }
 
-export function TimelineScreen() {
-  const { data } = useAppState();
-  const trips = selectTrips(data);
-  const [pickedId, setPickedId] = useState<string | null>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
+interface Props {
+  pickedId: string | null;
+  onPick: (id: string) => void;
+}
 
-  const trip =
-    trips.find((t) => t.id === pickedId) ??
-    trips.find((t) => t.id === data.activeTripId) ??
-    trips[0];
+export function TimelineScreen({ pickedId, onPick }: Props) {
+  const { data } = useAppState();
+  const trip = selectViewedTrip(data, pickedId);
+  const [view, setView] = useLocalStorage<View>({
+    key: 'plate-trip:ui:timeline-view',
+    defaultValue: 'list',
+  });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const sightings = trip
     ? selectTripSightings(data, trip.id).toSorted(
@@ -38,6 +50,7 @@ export function TimelineScreen() {
     : [];
   const days = groupByDay(sightings);
   const editing = sightings.find((s) => s.id === editingId) ?? null;
+  const selected = sightings.find((s) => s.id === selectedId) ?? null;
   const readOnly = !trip || trip.endedAt !== null;
 
   return (
@@ -45,22 +58,16 @@ export function TimelineScreen() {
       <header className={screen.header}>
         <Stack className={screen.inner} gap="xs">
           <Title order={4}>Timeline</Title>
-          {trips.length > 1 ? (
-            <Select
-              aria-label="Trip"
-              data={trips.map((t) => ({
-                value: t.id,
-                label: t.id === data.activeTripId ? `${t.name} (active)` : t.name,
-              }))}
-              value={trip?.id ?? null}
-              onChange={(value) => setPickedId(value)}
-              allowDeselect={false}
-            />
-          ) : trip ? (
-            <Text size="sm" c="dimmed">
-              {trip.name}
-            </Text>
-          ) : null}
+          <TripPicker pickedId={pickedId} onPick={onPick} />
+          <SegmentedControl
+            fullWidth
+            data={[
+              { value: 'list', label: 'List' },
+              { value: 'map', label: 'Map' },
+            ]}
+            value={view}
+            onChange={(value) => setView(value as View)}
+          />
         </Stack>
       </header>
 
@@ -70,6 +77,13 @@ export function TimelineScreen() {
             <Text c="dimmed" ta="center" py="xl">
               No plates logged on this trip yet.
             </Text>
+          ) : view === 'map' ? (
+            <MapView
+              sightings={sightings}
+              selected={selected}
+              onSelect={setSelectedId}
+              onEdit={() => selected && setEditingId(selected.id)}
+            />
           ) : (
             days.map((day) => (
               <Stack key={day.date} gap="xs">
@@ -85,6 +99,84 @@ export function TimelineScreen() {
 
       <SightingEditor sighting={editing} readOnly={readOnly} onClose={() => setEditingId(null)} />
     </div>
+  );
+}
+
+interface MapViewProps {
+  sightings: Sighting[];
+  selected: Sighting | null;
+  onSelect: (id: string) => void;
+  onEdit: () => void;
+}
+
+function MapView({ sightings, selected, onSelect, onEdit }: MapViewProps) {
+  const online = useOnline();
+  const missing = sightings.filter((s) => s.location === null).length;
+  const hasPins = missing < sightings.length;
+
+  if (!hasPins) {
+    return (
+      <Text c="dimmed" ta="center" py="xl">
+        None of this trip's plates have a location yet, so there's nothing to put on the map. You
+        can add coordinates from the List view.
+      </Text>
+    );
+  }
+
+  const region = selected ? getRegion(selected.regionId) : undefined;
+  const when = selected ? wallClock(selected.seenAt) : null;
+
+  return (
+    <Stack gap="xs">
+      <Suspense
+        fallback={
+          <Group justify="center" py="xl">
+            <Loader />
+          </Group>
+        }
+      >
+        <SightingsMap sightings={sightings} selectedId={selected?.id ?? null} onSelect={onSelect} />
+      </Suspense>
+
+      {!online ? (
+        <Text size="xs" c="yellow">
+          You're offline. Map tiles you haven't viewed before won't load, but your pins still show.
+        </Text>
+      ) : null}
+      {missing > 0 ? (
+        <Text size="xs" c="dimmed">
+          {missing} {missing === 1 ? 'plate has' : 'plates have'} no location and{' '}
+          {missing === 1 ? "isn't" : "aren't"} shown.
+        </Text>
+      ) : null}
+
+      {selected && when ? (
+        <Paper withBorder p="sm" radius="md">
+          <Group justify="space-between" wrap="nowrap">
+            <div style={{ minWidth: 0 }}>
+              <Text fw={600} truncate>
+                {region?.name ?? selected.regionId}
+              </Text>
+              <Text size="sm" c="dimmed">
+                {formatDay(when.date)}, {formatTime(when.time)}
+              </Text>
+              {selected.note ? (
+                <Text size="sm" lineClamp={2}>
+                  {selected.note}
+                </Text>
+              ) : null}
+            </div>
+            <Button size="xs" variant="light" onClick={onEdit}>
+              Details
+            </Button>
+          </Group>
+        </Paper>
+      ) : (
+        <Text size="sm" c="dimmed">
+          Tap a pin to see that sighting. The dashed line joins them in the order you saw them.
+        </Text>
+      )}
+    </Stack>
   );
 }
 

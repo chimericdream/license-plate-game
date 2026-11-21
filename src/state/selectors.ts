@@ -11,6 +11,19 @@ export function selectTrips(data: StoreData): Trip[] {
     .toSorted((a, b) => Date.parse(b.startedAt) - Date.parse(a.startedAt));
 }
 
+/**
+ * The trip the Timeline and Stats tabs should show: the one the user picked,
+ * else the active trip, else the most recent.
+ */
+export function selectViewedTrip(data: StoreData, pickedId: string | null): Trip | undefined {
+  const trips = selectTrips(data);
+  return (
+    trips.find((t) => t.id === pickedId) ??
+    trips.find((t) => t.id === data.activeTripId) ??
+    trips[0]
+  );
+}
+
 export function selectTripSightings(data: StoreData, tripId: string): Sighting[] {
   return data.sightings.filter((s) => s.tripId === tripId && !s.deletedAt);
 }

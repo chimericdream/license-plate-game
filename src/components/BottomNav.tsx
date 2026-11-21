@@ -1,11 +1,12 @@
-import { IconLayoutGrid, IconListDetails, IconRoute } from '@tabler/icons-react';
+import { IconChartBar, IconLayoutGrid, IconListDetails, IconRoute } from '@tabler/icons-react';
 import classes from './BottomNav.module.css';
 
-export type Tab = 'plates' | 'timeline' | 'trips';
+export type Tab = 'plates' | 'timeline' | 'stats' | 'trips';
 
 const TABS = [
   { id: 'plates', label: 'Plates', Icon: IconLayoutGrid },
   { id: 'timeline', label: 'Timeline', Icon: IconListDetails },
+  { id: 'stats', label: 'Stats', Icon: IconChartBar },
   { id: 'trips', label: 'Trips', Icon: IconRoute },
 ] as const;
 

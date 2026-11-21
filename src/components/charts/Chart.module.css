@@ -1,0 +1,67 @@
+/* One series, one hue: the app's blue. Grid and axes stay recessive. */
+
+.svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* Let the page scroll vertically while a finger scrubs horizontally. */
+  touch-action: pan-y;
+  user-select: none;
+}
+
+.grid {
+  stroke: light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+  stroke-width: 1;
+}
+
+.axisLabel {
+  fill: var(--mantine-color-dimmed);
+  font-size: 10px;
+}
+
+.line {
+  fill: none;
+  stroke: var(--mantine-color-blue-filled);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.cursor {
+  stroke: light-dark(var(--mantine-color-gray-5), var(--mantine-color-dark-3));
+  stroke-width: 1;
+}
+
+.dot {
+  fill: var(--mantine-color-blue-filled);
+  /* A surface-colored ring keeps overlapping marks readable. */
+  stroke: var(--mantine-color-body);
+  stroke-width: 2;
+}
+
+.bar {
+  fill: var(--mantine-color-blue-filled);
+}
+
+.bar[data-dim] {
+  opacity: 0.45;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--mantine-font-size-sm);
+}
+
+.table th,
+.table td {
+  padding: 4px 8px;
+  text-align: start;
+  border-bottom: 1px solid light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+}
+
+.summary {
+  cursor: pointer;
+  font-size: var(--mantine-font-size-sm);
+  color: var(--mantine-color-dimmed);
+}

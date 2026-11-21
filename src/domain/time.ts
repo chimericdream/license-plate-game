@@ -48,6 +48,16 @@ export function formatDay(date: string): string {
   });
 }
 
+/** `YYYY-MM-DD` to "Nov 21". */
+export function formatDayShort(date: string): string {
+  const [y = 1970, m = 1, d = 1] = date.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d)).toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+    timeZone: 'UTC',
+  });
+}
+
 /** `YYYY-MM-DD` to a short date like "Nov 21, 2026". */
 export function formatDate(date: string): string {
   const [y = 1970, m = 1, d = 1] = date.split('-').map(Number);
@@ -67,6 +77,18 @@ export function formatTime(time: string): string {
     minute: '2-digit',
     timeZone: 'UTC',
   });
+}
+
+/** 95 -> "1 h 35 min", 3000 -> "2 d 2 h", 0.4 -> "under a minute". */
+export function formatDuration(minutes: number): string {
+  if (minutes < 1) return 'under a minute';
+  const total = Math.round(minutes);
+  const days = Math.floor(total / 1440);
+  const hours = Math.floor((total % 1440) / 60);
+  const mins = total % 60;
+  if (days > 0) return hours > 0 ? `${days} d ${hours} h` : `${days} d`;
+  if (hours > 0) return mins > 0 ? `${hours} h ${mins} min` : `${hours} h`;
+  return `${mins} min`;
 }
 
 export function minutesBetween(earlierIso: string, later: Date): number {
