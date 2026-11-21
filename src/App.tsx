@@ -10,6 +10,7 @@ import { TripsScreen } from './components/TripsScreen';
 import { useAppState } from './state/hooks';
 import { appStore, locationService } from './state/instances';
 import { selectActiveTrip, selectTrips } from './state/selectors';
+import { requestPersistentStorage } from './storage/persistence';
 
 export function App() {
   const { status, data, error } = useAppState();
@@ -18,6 +19,7 @@ export function App() {
   useEffect(() => {
     void appStore.init();
     void locationService.init();
+    void requestPersistentStorage();
   }, []);
 
   if (status === 'loading') {

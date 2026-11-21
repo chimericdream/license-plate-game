@@ -15,11 +15,11 @@ class MemoryRepository implements Repository {
   }
 }
 
-function setup() {
+function setup(prefix = 'id') {
   const repo = new MemoryRepository();
   let clock = new Date('2026-11-21T12:00:00.000Z');
   let n = 0;
-  const store = new AppStore(repo, { now: () => clock, uuid: () => `id-${++n}` });
+  const store = new AppStore(repo, { now: () => clock, uuid: () => `${prefix}-${++n}` });
   return {
     repo,
     store,
@@ -201,6 +201,28 @@ describe('AppStore', () => {
       regionId: 'US-UT',
       note: 'Red rocks',
     });
+  });
+
+  it('imports a backup by merging or replacing', async () => {
+    const { store } = setup();
+    await store.init();
+    store.createTrip('Mine');
+    store.logSighting({ regionId: 'US-CO', fix: null });
+
+    const other = setup('other');
+    await other.store.init();
+    other.store.createTrip('Theirs');
+    other.store.logSighting({ regionId: 'US-UT', fix: null });
+    const theirs = other.store.getSnapshot().data;
+
+    const stats = store.importBackup(theirs, 'merge');
+    expect(stats).toMatchObject({ tripsAdded: 1, sightingsAdded: 1 });
+    expect(store.getSnapshot().data.trips).toHaveLength(2);
+    expect(store.getSnapshot().data.sightings).toHaveLength(2);
+
+    expect(store.importBackup(theirs, 'replace')).toBeNull();
+    expect(store.getSnapshot().data.trips).toHaveLength(1);
+    expect(store.getSnapshot().data.trips[0]?.name).toBe('Theirs');
   });
 
   it('notifies subscribers on change', async () => {

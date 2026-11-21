@@ -1,6 +1,7 @@
 import { checkCooldown, type CooldownBlock } from '../domain/cooldown';
 import { isoWithOffset } from '../domain/time';
 import type { GeoFix, Sighting, StoreData, Trip } from '../domain/types';
+import { mergeStoreData, type MergeStats } from '../storage/backup';
 import { emptyStoreData } from '../storage/migrate';
 import type { Repository } from '../storage/repository';
 import { lastSightingFor, selectActiveTrip, selectTripSightings } from './selectors';
@@ -80,6 +81,20 @@ export class AppStore {
     );
     this.commit({ ...this.state.data, activeTripId: trip.id, trips: [...trips, trip] });
     return trip;
+  }
+
+  /**
+   * Brings in a parsed backup. "merge" combines by id (newer edits win);
+   * "replace" swaps everything for the backup's contents.
+   */
+  importBackup(incoming: StoreData, mode: 'merge' | 'replace'): MergeStats | null {
+    if (mode === 'replace') {
+      this.commit(incoming);
+      return null;
+    }
+    const { data, stats } = mergeStoreData(this.state.data, incoming);
+    this.commit(data);
+    return stats;
   }
 
   /** Ends a trip. If it was the active one, there is no active trip afterward. */

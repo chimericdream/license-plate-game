@@ -5,6 +5,7 @@ import type { Trip } from '../domain/types';
 import { useAppState } from '../state/hooks';
 import { appStore } from '../state/instances';
 import { selectTripSightings, selectTrips } from '../state/selectors';
+import { DataBackupCard } from './DataBackupCard';
 import { NewTripModal } from './NewTripModal';
 import screen from './Screen.module.css';
 
@@ -51,6 +52,7 @@ export function TripsScreen() {
               onEdit={() => setEditingId(trip.id)}
             />
           ))}
+          <DataBackupCard />
         </div>
       </main>
 
