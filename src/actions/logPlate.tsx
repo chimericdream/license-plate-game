@@ -1,8 +1,11 @@
-import { Button, Group, Text } from '@mantine/core';
+import { ActionIcon, Button, Group, Text } from '@mantine/core';
+import { IconCamera } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
+import type { ReactNode } from 'react';
 import { COOLDOWN_MILES, COOLDOWN_MINUTES, type CooldownBlock } from '../domain/cooldown';
 import { getRegion } from '../data/regions';
 import { appStore, locationService } from '../state/instances';
+import { addPhotosTo } from './addPhotos';
 
 const TOAST_ID = 'plate-toast';
 
@@ -23,6 +26,8 @@ function showToast(args: {
   detail?: string;
   actionLabel: string;
   onAction: () => void;
+  /** An optional second button, shown before the main one. */
+  extra?: { label: string; icon: ReactNode; onClick: () => void };
   color?: string;
 }) {
   notifications.clean();
@@ -41,16 +46,31 @@ function showToast(args: {
             </Text>
           ) : null}
         </div>
-        <Button
-          size="compact-md"
-          variant="light"
-          onClick={() => {
-            notifications.hide(TOAST_ID);
-            args.onAction();
-          }}
-        >
-          {args.actionLabel}
-        </Button>
+        <Group gap="xs" wrap="nowrap">
+          {args.extra ? (
+            <ActionIcon
+              size="lg"
+              variant="default"
+              aria-label={args.extra.label}
+              onClick={() => {
+                notifications.hide(TOAST_ID);
+                args.extra?.onClick();
+              }}
+            >
+              {args.extra.icon}
+            </ActionIcon>
+          ) : null}
+          <Button
+            size="compact-md"
+            variant="light"
+            onClick={() => {
+              notifications.hide(TOAST_ID);
+              args.onAction();
+            }}
+          >
+            {args.actionLabel}
+          </Button>
+        </Group>
       </Group>
     ),
   });
@@ -89,6 +109,12 @@ export function logPlate(regionId: string, options: { force?: boolean } = {}): v
     detail: fix ? undefined : 'Waiting for location…',
     actionLabel: 'Undo',
     onAction: () => appStore.removeSighting(sighting.id),
+    extra: {
+      label: 'Add a photo',
+      icon: <IconCamera size={18} aria-hidden />,
+      // Opens the camera straight from this tap, as browsers require.
+      onClick: () => void addPhotosTo(sighting, { camera: true }),
+    },
   });
 
   if (!fix) {

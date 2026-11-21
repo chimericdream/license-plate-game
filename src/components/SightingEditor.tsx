@@ -15,6 +15,7 @@ import { COUNTRIES, regionsFor } from '../data/regions';
 import { isoWithOffset, toLocalInputValue, withWallClock } from '../domain/time';
 import type { GeoFix, Sighting } from '../domain/types';
 import { appStore, locationService } from '../state/instances';
+import { PhotoSection } from './PhotoSection';
 
 const REGION_OPTIONS = COUNTRIES.map((country) => ({
   group: country.label,
@@ -189,6 +190,8 @@ function EditorForm({ sighting, readOnly, onClose }: Props & { sighting: Sightin
         onChange={(event) => setNote(event.currentTarget.value)}
         disabled={readOnly}
       />
+
+      <PhotoSection sighting={sighting} readOnly={readOnly} />
 
       {readOnly ? (
         <Text size="sm" c="dimmed">

@@ -3,10 +3,13 @@ import { useLocalStorage } from '@mantine/hooks';
 import { Suspense, lazy, useState } from 'react';
 import { getRegion } from '../data/regions';
 import { formatDay, formatTime, wallClock } from '../domain/time';
-import type { Sighting } from '../domain/types';
+import type { Photo, Sighting } from '../domain/types';
 import { useAppState } from '../state/hooks';
+import { usePhotosBySighting } from '../state/photoHooks';
 import { selectTripSightings, selectViewedTrip } from '../state/selectors';
 import { useOnline } from '../state/useOnline';
+import { PhotoThumb } from './PhotoThumb';
+import photoClasses from './Photos.module.css';
 import { SightingEditor } from './SightingEditor';
 import screen from './Screen.module.css';
 import classes from './TimelineScreen.module.css';
@@ -42,6 +45,7 @@ export function TimelineScreen({ pickedId, onPick }: Props) {
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const photosBySighting = usePhotosBySighting();
 
   const sightings = trip
     ? selectTripSightings(data, trip.id).toSorted(
@@ -89,7 +93,12 @@ export function TimelineScreen({ pickedId, onPick }: Props) {
               <Stack key={day.date} gap="xs">
                 <div className={classes.day}>{formatDay(day.date)}</div>
                 {day.items.map((s) => (
-                  <SightingRow key={s.id} sighting={s} onOpen={() => setEditingId(s.id)} />
+                  <SightingRow
+                    key={s.id}
+                    sighting={s}
+                    photos={photosBySighting.get(s.id) ?? []}
+                    onOpen={() => setEditingId(s.id)}
+                  />
                 ))}
               </Stack>
             ))
@@ -185,7 +194,13 @@ function MapView({ sightings, selected, onSelect, onEdit }: MapViewProps) {
   );
 }
 
-function SightingRow({ sighting, onOpen }: { sighting: Sighting; onOpen: () => void }) {
+interface RowProps {
+  sighting: Sighting;
+  photos: Photo[];
+  onOpen: () => void;
+}
+
+function SightingRow({ sighting, photos, onOpen }: RowProps) {
   const region = getRegion(sighting.regionId);
   const { time } = wallClock(sighting.seenAt);
   const { location } = sighting;
@@ -213,6 +228,12 @@ function SightingRow({ sighting, onOpen }: { sighting: Sighting; onOpen: () => v
           </Text>
         ) : null}
       </span>
+      {photos[0] ? (
+        <span className={photoClasses.rowThumb}>
+          <PhotoThumb photo={photos[0]} alt="" />
+          {photos.length > 1 ? <span className={photoClasses.count}>{photos.length}</span> : null}
+        </span>
+      ) : null}
     </button>
   );
 }

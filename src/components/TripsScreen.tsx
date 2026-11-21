@@ -206,7 +206,7 @@ function TripEditorForm({ trip, onClose }: { trip: Trip; onClose: () => void }) 
           {confirmingDelete ? (
             <Stack gap={4}>
               <Text size="xs" c="red">
-                Deletes this trip and all its plates.
+                Deletes this trip and all its plates and photos.
               </Text>
               <Group gap="xs">
                 <Button
