@@ -22,6 +22,13 @@ export function App() {
     void requestPersistentStorage();
   }, []);
 
+  // Once a trip exists, ask for location on our own at launch and on every
+  // return to the app, so there's no banner to tap after leaving and coming back.
+  const hasTrips = status === 'ready' && selectTrips(data).length > 0;
+  useEffect(() => {
+    if (hasTrips) locationService.arm();
+  }, [hasTrips]);
+
   if (status === 'loading') {
     return (
       <Center h="100dvh">
